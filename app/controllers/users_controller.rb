@@ -1,19 +1,24 @@
 class UsersController < ApplicationController
-    skip_before_action :authorize, only: [:create]
 
-    def create 
+
+    def create
         user = User.create(user_params)
         if user.valid?
-            render json: user, status: :created 
-        else 
-            render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+        session[:user_id] = user.id # this is the piece that logs a user in and keeps track of users info in subsequent requests.
+          render json: user, status: :created
+        else
+            render json: user.errors.full_messages, status: :unprocessable_entity
         end
-        end
-    end
-
+      end
+    # Here I just need to add an empty {} and status:  after it.
     def show
-        user = User.find_by(id: session[:user_id])
-        render json: user
+        user = User.find_by_id(session[:user_id])
+        if user 
+            render json: user
+        else  
+            render json:{}, status: :unauthorized
+        end
+      
     end
 
 
@@ -27,7 +32,5 @@ class UsersController < ApplicationController
         params.permit(:username, :password, :password_confirmation)
     end
 
-    def authorize
-        return render json: { error: "Not authorized" }, status: :unauthorized unless session.include? :user_id
-    end
+  
 end
